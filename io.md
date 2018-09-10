@@ -8,12 +8,41 @@
         - Directory
         - socket
         - others: named pipe, symbolic link, char and block device
-    - 文件的操作
-        - open(char * filename, int flags, mode_t mode)
-        - lseek(int fd, off_t offset, int whence)
-            - whence 有三种模式，**SEEK_SET** offset is set to offset bytes，**SEEK_CUR** offset is set to current location plus offset, **SEEK_END** offset is set to size of file plus offset.
-            - 注意，lseek 允许 offset 超过 size of file （傻逼吗），如果有数据写，那么中间的 `gap` 被补 0。
-            - linux 3.1 后，加入了 SEEK_DATA 和 SEEK_HOLE 模式，SEEK DATA 表示寻找下一个有数据的 offset， SEEK HOLE 表示寻找下一个 HOLE 的 offset。
-- 文件描述符在内核中的表示
+    - File Descriptor
+        - Special FD: STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO
+- 文件共享
     - Discriptor Table
+        - Composed with pairs of (fd, file pointer to file table) 
+        - 只和单个进程对应
     - File Table
+        - 所有进程共享
+        - Structure
+            - file stats flag (read/write/append ?)
+            - offset
+            - v-node pointer
+    - v-node Table (Read From Disk)
+        - v-node info
+        - inode info (owner, size, pointer on dist)
+        
+
+- 文件的操作
+    - open(char * filename, int flags, mode_t mode)
+    - write
+    - lseek(int fd, off_t offset, int whence)
+        - whence 有三种模式，**SEEK_SET** offset is set to offset bytes，**SEEK_CUR** offset is set to current location plus offset, **SEEK_END** offset is set to size of file plus offset.
+        - 注意，lseek 允许 offset 超过 size of file ，如果有数据写，那么中间的 `gap` 被补 0。
+        - linux 3.1 后，加入了 SEEK_DATA 和 SEEK_HOLE 模式，SEEK DATA 表示寻找下一个有数据的 offset， SEEK HOLE 表示寻找下一个 HOLE 的 offset。
+        - lseek 不涉及 I/O 操作 (比如移动磁盘头部)，只修改 File Table
+    - Atomic Operation
+        - lseek first and then write 在多进程并发时存在风险
+        - pread/ pwrite 保证 seek + wirte 属于一个原子操作
+        - Open with O_APPEND 同样保证原子操作，每次 write 时都是在文件尾。
+    - I/O redirection
+        - Linux Shell 提供 I/O 重定向功能，实际上是通过 dup 接口实现的
+        - 
+    - Page Cache
+        - Unix 默认写流程： write -> Page Cache -> 写队列 -> 磁盘
+        - 可能造成文件更新内容丢失
+        - sync 将 cache 提前写入 write queue
+        - fsync 将 cache 写入磁盘再返回
+    - fcntl 改变打开文件的性质
