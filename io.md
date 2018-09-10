@@ -1,0 +1,15 @@
+- guide line
+    - I/O 是指主存与外部设备（Disk Driver, Terminal, Network）之间复制数据的过程。
+    - 编程语言通常会基于 Unix I/O 实现标准 I/O 库
+- 文件（File）
+    - **定义**： 所有 I/O 设备都被抽象化为文件。
+    - 文件的类型
+        - regular file
+        - Directory
+        - socket
+        - others: named pipe, symbolic link, char and block device
+    - 文件的操作
+        - open(char * filename, int flags, mode_t mode)
+- 文件描述符在内核中的表示
+    - Discriptor Table
+    - File Table
