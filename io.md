@@ -10,6 +10,10 @@
         - others: named pipe, symbolic link, char and block device
     - 文件的操作
         - open(char * filename, int flags, mode_t mode)
+        - lseek(int fd, off_t offset, int whence)
+            - whence 有三种模式，**SEEK_SET** offset is set to offset bytes，**SEEK_CUR** offset is set to current location plus offset, **SEEK_END** offset is set to size of file plus offset.
+            - 注意，lseek 允许 offset 超过 size of file （傻逼吗），如果有数据写，那么中间的 `gap` 被补 0。
+            - linux 3.1 后，加入了 SEEK_DATA 和 SEEK_HOLE 模式，SEEK DATA 表示寻找下一个有数据的 offset， SEEK HOLE 表示寻找下一个 HOLE 的 offset。
 - 文件描述符在内核中的表示
     - Discriptor Table
     - File Table
