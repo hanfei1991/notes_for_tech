@@ -1,0 +1,59 @@
+- guide line
+    - I/O 是指主存与外部设备（Disk Driver, Terminal, Network）之间复制数据的过程。
+    - 编程语言通常会基于 Unix I/O 实现标准 I/O 库
+- 文件（File）
+    - **定义**： 所有 I/O 设备都被抽象化为文件。
+    - 文件的类型
+        - regular file
+        - Directory
+        - socket
+        - others: named pipe, symbolic link, char and block device
+    - File Descriptor
+        - Special FD: STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO
+- 文件共享
+    - Discriptor Table
+        - Composed with pairs of (fd, file pointer to file table) 
+        - 只和单个进程对应
+        - 进程结束时，会释放资源
+    - File Table
+        - 所有进程共享
+        - Structure
+            - file stats flag (read/write/append ?)
+            - offset
+            - v-node pointer
+        - 如果 File Table 的引用基数为 0 ，则会回收
+    - v-node Table (Read From Disk)
+        - v-node info
+        - inode info (owner, size, pointer on disk)
+            - 文件的索引节点
+- VFS
+    - Linux 定义了一套文件 I/O 基本操作 VFS，所有和 Linux 对接的 Driver 都会实现 VFS 接口。
+        - 文件视为一个 Block 序列 (B_0, B_1, ..., B_n)
+    - open(char * filename, int flags, mode_t mode)
+        - 打开文件，Offset 设置为 0
+        - 如果 mode 中设置了 O_CREATE，那么当文件不存在时，会创建新文件
+    - close
+        - 释放 Disciptor Table 的资源
+    - ssize_t write(fd, buf, count)
+        - 在 fd 文件的 offset 位置写入长度为 count 字节，首指针为 buf 的内容
+        - 返回实际写入的字节数
+            - 返回值可能少于 count，比如磁盘已满
+    - ssize_t read(fd, buf, count)
+        - 读取长度为 count 的内容，写入到 buf 中
+        - 返回值可能少于 count
+    - lseek(int fd, off_t offset, int whence)
+        - whence 有三种模式，**SEEK_SET** offset is set to offset bytes，**SEEK_CUR** offset is set to current location plus offset, **SEEK_END** offset is set to size of file plus offset.
+        - 注意，lseek 允许 offset 超过 size of file ，如果有数据写，那么中间的 Hole 视为 0（不占磁盘空间）
+        - linux 3.1 后，加入了 SEEK_DATA 和 SEEK_HOLE 模式，SEEK DATA 表示寻找下一个有数据的 offset， SEEK HOLE 表示寻找下一个 HOLE 的 offset。
+        - lseek 不涉及 I/O 操作 (比如移动磁盘头部)，只修改 File Table
+    - Atomic Operation
+        - lseek first and then write 在多进程并发时存在风险
+        - pread/ pwrite 保证 seek + wirte 属于一个原子操作
+        - Open with O_APPEND 同样保证原子操作，每次 write 时都是在文件尾。
+    - I/O redirection
+        - Linux Shell 提供 I/O 重定向功能，实际上是通过 dup 接口实现的
+        - dup (oldfd, newfd, flags)
+            - 实际上只改变 Discriptor Table 的指针
+    - fcntl 改变打开文件的性质
+    - fsync 将 page cache 刷入磁盘
+        - 绕过 page cache 的方法: mmap
