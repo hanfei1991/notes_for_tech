@@ -5,6 +5,9 @@
 #include<exception>
 #include<iostream>
 
+#include "alloc.h"
+#include "construct.h"
+
 namespace toy {
 
 struct TreeNodeBase {
@@ -126,8 +129,8 @@ public:
     }
 };
 
-template<typename Key, typename Compare, typename Value, typename KeyOfValue = Select1ST<Key, Value>>
-class BinarySearchTree
+template<typename Key, typename Compare, typename Value, typename KeyOfValue = Select1ST<Key, Value>, typename Allocator = StepAllocator<true>>
+class BinarySearchTree : public Allocator
 {
 public:
     using iterator = IteratorImpl<Value, false>;
@@ -190,7 +193,7 @@ private:
             insert_left(successor, node -> left);
         }
 
-        delete static_cast<NodePtr>(node);
+        freeNode(node);
 
     }
 
@@ -222,6 +225,16 @@ private:
         }
     }
 
+    void freeNode (BasePtr node) {
+        Allocator::free((void*)node, sizeof(TreeNode<Value>));
+    }
+
+    NodePtr createNode(const Value & value) {
+        NodePtr ptr = (NodePtr)Allocator::alloc(sizeof(TreeNode<Value>));
+        ConstructHelper::CopyConstruct(&ptr -> value, value);
+        return ptr;
+    }
+
 public:
 
     BinarySearchTree() : header() {
@@ -229,7 +242,7 @@ public:
     }
 
     std::pair<iterator, bool> insert_unique(const Value & value) {
-        NodePtr node = new TreeNode<Value>(value);
+        NodePtr node = createNode(value);
         if (nullptr == root()) {
             insert_left(&header, node);
             return std::make_pair(iterator(node), true);

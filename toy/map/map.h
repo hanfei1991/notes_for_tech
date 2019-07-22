@@ -1,13 +1,14 @@
 #pragma once
 
 #include "bst.h"
+#include "alloc.h"
 
 #include<functional>
 
 namespace toy {
 
 // This map is a common interface, which supports different underlying algos.
-template <typename Key, typename Value, typename Compare = std::less<Key>, class TreeType = BinarySearchTree<Key, Compare, std::pair<Key, Value>>>
+template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = StepAllocator<true>, class TreeType = BinarySearchTree<Key, Compare, std::pair<Key, Value>> >
 class map
 {
 public:
