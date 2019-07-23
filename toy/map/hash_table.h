@@ -1,6 +1,8 @@
 #include "alloc.h"
 #include <cstring>
 
+#include <iostream>
+
 namespace toy {
 
 namespace ZeroTraits
@@ -45,6 +47,7 @@ struct HashTableGrower
     void increaseSize()
     {
         size_degree += size_degree >= 23 ? 1 : 2;
+        //std::cout<<"increase: "<<size_degree<<std::endl;
     }
 
     /// Set the buffer size by the number of elements in the hash table. Used when deserializing a hash table.
@@ -210,13 +213,16 @@ private:
           * The element can stay in place, or move to a new location "on the right",
           *  or move to the left of the collision resolution chain, because the elements to the left of it have been moved to the new "right" location.
           */
+        //std::cout<<"before insert\n";
         size_t i = 0;
         for (; i < old_size; ++i)
             if (!buf[i].isZero() && !buf[i].isDeleted())
                 reinsert(buf[i], buf[i].getHash(hash));
 
+        //std::cout<<"mid insert\n";
         for (; !buf[i].isZero() && !buf[i].isDeleted(); ++i)
             reinsert(buf[i], buf[i].getHash(hash));
+        //std::cout<<"end insert\n";
     }
 
 
@@ -244,6 +250,7 @@ private:
         insert = true;
         size ++;
 
+        //std::cout<<"size: "<<size<<std::endl;
         if (grower.overflow(size)) {
             resize();
 
@@ -311,6 +318,7 @@ public:
     HashTable()
     {
         this->has_zero = false;
+        size = 0;
         alloc(grower);
     }
 
